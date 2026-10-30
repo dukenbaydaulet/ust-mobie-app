@@ -1,0 +1,53 @@
+﻿name: Flutter iOS Unsigned Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios-build:
+    name: Build iOS without signing
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+
+      - name: Show versions
+        run: |
+          flutter --version
+          xcodebuild -version
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build unsigned iOS app
+        run: |
+          flutter build ios --release --no-codesign \
+            --dart-define=API_URL=https://api.ust.kz/api
+
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p unsigned/Payload
+          cp -R build/ios/iphoneos/Runner.app unsigned/Payload/
+          cd unsigned
+          zip -qry ../ust-mobile-ios-unsigned.ipa Payload
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ust-mobile-ios-unsigned
+          path: ust-mobile-ios-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
