@@ -15,6 +15,7 @@ import '../material.dart';
 import '../material_detail.dart';
 import '../materials_repository.dart';
 import '../widgets/material_widgets.dart';
+import 'kaspi_pay_page.dart';
 
 const _green = Color(0xFF16A34A);
 
@@ -684,13 +685,6 @@ Future<bool> purchaseTariff(
   }
 }
 
-/// Kaspi-дегі «Ustaz Tilegi» төлемі: сома пайдаланушы ID-і бойынша
-/// сайттағы балансқа түседі (сайттағы oplataPopup.vue сияқты).
-Uri kaspiPayUri({required int userId, required int price}) => Uri.parse(
-  'https://kaspi.kz/pay/UstazTilegi1'
-  '?TranId=1&OrderId=$userId&Amount=${price}00',
-);
-
 /// «Балансыңыз жеткіліксіз» → Kaspi арқылы төлеу. Пайдаланушы «Төледім» басса — true.
 Future<bool> _showKaspiDialog(
   BuildContext context,
@@ -720,18 +714,14 @@ class _KaspiDialogState extends State<_KaspiDialog> {
   bool _opened = false;
 
   Future<void> _pay() async {
-    final ok = await launchUrl(
-      kaspiPayUri(userId: widget.userId, price: widget.price),
-      mode: LaunchMode.externalApplication,
+    // Сома пайдаланушы ID-і бойынша сайттағы балансқа түседі
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            KaspiPayPage(userId: widget.userId, price: widget.price),
+      ),
     );
-    if (!mounted) return;
-    if (ok) {
-      setState(() => _opened = true);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kaspi-ді ашу мүмкін болмады')),
-      );
-    }
+    if (mounted) setState(() => _opened = true);
   }
 
   @override
